@@ -17,23 +17,21 @@ from utils import reverse_stft, compute_lx_error, compute_sdr
 
 print("load data files...")
 data_dir = '/data/yongzheng/cass/samples/'
-stft_bass = np.float32(np.load(data_dir + 's1_train_mag.npy'))
-stft_clar = np.float32(np.load(data_dir + 's2_train_mag.npy'))
-stft_mix = stft_bass + stft_clar
-#stft_mix = np.float32(np.load(data_dir + 'mix_train_mag.npy'))
+stft_vocal = np.float32(np.load(data_dir + 's1_train_mag.npy'))
+stft_accom = np.float32(np.load(data_dir + 's2_train_mag.npy'))
+stft_mix = stft_vocal + stft_accom
 
 
-stft_bass_test = np.float32(np.load(data_dir + 's1_test_mag.npy'))
-stft_clar_test = np.float32(np.load(data_dir + 's2_test_mag.npy'))
-stft_mix_test = stft_bass_test + stft_clar_test
-#stft_mix_test = np.float32(np.load(data_dir + 'mix_test_mag.npy'))
+stft_vocal_test = np.float32(np.load(data_dir + 's1_test_mag.npy'))
+stft_accom_test = np.float32(np.load(data_dir + 's2_test_mag.npy'))
+stft_mix_test = stft_vocal_test + stft_accom_test
 
-stft_bass_test_phase = np.float32(np.load(data_dir + 's1_test_pha.npy'))
-stft_clar_test_phase = np.float32(np.load(data_dir + 's1_test_pha.npy'))
+stft_vocal_test_phase = np.float32(np.load(data_dir + 's1_test_pha.npy'))
+stft_accom_test_phase = np.float32(np.load(data_dir + 's1_test_pha.npy'))
 stft_mix_test_pha = np.float32(np.load(data_dir + 'mix_test_pha.npy'))
 
-stft_bass_train_phase = np.float32(np.load(data_dir + 's1_train_pha.npy'))
-stft_clar_train_phase = np.float32(np.load(data_dir + 's2_train_pha.npy'))
+stft_vocal_train_phase = np.float32(np.load(data_dir + 's1_train_pha.npy'))
+stft_accom_train_phase = np.float32(np.load(data_dir + 's2_train_pha.npy'))
 stft_mix_train_pha = np.float32(np.load(data_dir + 'mix_train_pha.npy'))
 print("data files loaded!")
 
@@ -77,8 +75,8 @@ for j in range(1, NUM_EPOCHS+1):
     for i, batch in enumerate(dl):
         IDX = batch.numpy()
         x = stft_mix[IDX]
-        a = stft_bass[IDX]
-        b = stft_clar[IDX]
+        a = stft_vocal[IDX]
+        b = stft_accom[IDX]
 
         u_losses = unet.train(x, [a, b])
 
@@ -87,34 +85,34 @@ for j in range(1, NUM_EPOCHS+1):
     for i, batch in enumerate(dl2):
         IDX = batch.numpy()
         x = stft_mix_test[IDX]
-        bass_results, clar_results = unet.test(x)
-        b_r.append(bass_results)
-        c_r.append(clar_results)
+        vocal_results, accom_results = unet.test(x)
+        b_r.append(vocal_results)
+        c_r.append(accom_results)
     b_r = np.concatenate(b_r, axis=0)
     c_r = np.concatenate(c_r, axis=0)
     results = [b_r, c_r]
 
     # compute error
-    bass_error = compute_lx_error(stft_bass_test, results[0], stft_mix_test_pha)
-    clar_error = compute_lx_error(stft_clar_test, results[1], stft_mix_test_pha)
-    bass_sdr, bass_std, bass_med, bass_min, bass_max = compute_sdr(stft_bass_test, results[0], stft_mix_test_pha, stft_mix_test)
-    clar_sdr, clar_std, clar_med, clar_min, clar_max = compute_sdr(stft_clar_test, results[1], stft_mix_test_pha, stft_mix_test)
-    curr_error = 0.5*(bass_sdr + clar_sdr)
+    vocal_error = compute_lx_error(stft_vocal_test, results[0], stft_mix_test_pha)
+    accom_error = compute_lx_error(stft_accom_test, results[1], stft_mix_test_pha)
+    vocal_sdr, vocal_std, vocal_med, vocal_min, vocal_max = compute_sdr(stft_vocal_test, results[0], stft_mix_test_pha, stft_mix_test)
+    accom_sdr, accom_std, accom_med, accom_min, accom_max = compute_sdr(stft_accom_test, results[1], stft_mix_test_pha, stft_mix_test)
+    curr_error = 0.5*(vocal_sdr + accom_sdr)
     print(10*"=")
-    print("Epoch {}, Bass error: {:.4f}, Clar error: {:.4f}".format(
-        j, bass_error, clar_error))
+    print("Epoch {}, vocal error: {:.4f}, accom error: {:.4f}".format(
+        j, vocal_error, accom_error))
     print("Curr Best: {:.4f}, Avg Error: {:.4f}, Avg sdr: {:.4f}".format(
-        best_result, 0.5*(bass_error + clar_error), 0.5*(bass_sdr + clar_sdr)))
-    print("     Bass sdr: {:.4f}, Clar sdr: {:.4f}".format(
-        bass_sdr, clar_sdr))
-    print("STD: Bass sdr: {:.4f}, Clar sdr: {:.4f}".format(
-        bass_std, clar_std))
-    print("MED: Bass sdr: {:.4f}, Clar sdr: {:.4f}".format(
-        bass_med, clar_med))
-    print("MIN: Bass sdr: {:.4f}, Clar sdr: {:.4f}".format(
-        bass_min, clar_min))
-    print("MAX: Bass sdr: {:.4f}, Clar sdr: {:.4f}".format(
-        bass_max, clar_max))
+        best_result, 0.5*(vocal_error + accom_error), 0.5*(vocal_sdr + accom_sdr)))
+    print("     vocal sdr: {:.4f}, accom sdr: {:.4f}".format(
+        vocal_sdr, accom_sdr))
+    print("STD: vocal sdr: {:.4f}, accom sdr: {:.4f}".format(
+        vocal_std, accom_std))
+    print("MED: vocal sdr: {:.4f}, accom sdr: {:.4f}".format(
+        vocal_med, accom_med))
+    print("MIN: vocal sdr: {:.4f}, accom sdr: {:.4f}".format(
+        vocal_min, accom_min))
+    print("MAX: vocal sdr: {:.4f}, accom sdr: {:.4f}".format(
+        vocal_max, accom_max))
     print("AE Loss = {:.4f}".format(u_losses))
     if curr_error > best_result:
         best_result = curr_error
@@ -126,8 +124,8 @@ for j in range(1, NUM_EPOCHS+1):
     counter += 1
 
     # save error
-    b_error.append(bass_error)
-    c_error.append(clar_error)
+    b_error.append(vocal_error)
+    c_error.append(accom_error)
     np.save(save_dir + 's1_error', np.array(b_error))
     np.save(save_dir + 's2_error', np.array(c_error))
     for key in unet.history.keys():

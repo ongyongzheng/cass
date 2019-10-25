@@ -4,6 +4,12 @@ This repository contains the codes used to generate results used in the above pa
 
 CASS: CROSS ADVERSARIAL SOURCE SEPARATION VIA AUTOENCODER (Insert link for CASS paper)
 
+## Model Structure
+
+![alt text](https://github.com/ongyongzheng/cass/blob/master/yongz1.png "Framework of a single CASS component")
+
+![alt text](https://github.com/ongyongzheng/cass/blob/master/yongz2.png "Framework of 2 CASS components")
+
 ## Usage Instructions
 
 ### Preparation of Datasets
